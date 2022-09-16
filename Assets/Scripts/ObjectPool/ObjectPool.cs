@@ -23,6 +23,9 @@ namespace AngryKoala.ObjectPool
             AddToPool(initialSize);
         }
 
+        // Various overloads of GetPooledObject() method
+        #region Get
+
         public T GetPooledObject(bool setActive = true, bool initialize = true)
         {
             if(pool.Count == 0)
@@ -42,6 +45,91 @@ namespace AngryKoala.ObjectPool
             }
             return obj;
         }
+
+        public T GetPooledObject(Transform parent, bool setActive = true)
+        {
+            if(pool.Count == 0)
+            {
+                AddToPool();
+            }
+
+            var obj = GetPooledObject(false, false);
+            obj.transform.SetParent(parent);
+            obj.transform.position = parent.position;
+            obj.transform.rotation = parent.rotation;
+            if(setActive)
+            {
+                obj.gameObject.SetActive(true);
+            }
+
+            obj.Initialize();
+            return obj;
+        }
+
+        public T GetPooledObject(Transform parent, bool instantiateInWorldSpace, bool setActive = true)
+        {
+            if(pool.Count == 0)
+            {
+                AddToPool();
+            }
+
+            var obj = GetPooledObject(false, false);
+            obj.transform.SetParent(parent);
+            if(!instantiateInWorldSpace)
+            {
+                obj.transform.position = parent.position;
+                obj.transform.rotation = parent.rotation;
+            }
+
+            if(setActive)
+            {
+                obj.gameObject.SetActive(true);
+            }
+
+            obj.Initialize();
+            return obj;
+        }
+
+        public T GetPooledObject(Vector3 position, Quaternion rotation, bool setActive = true)
+        {
+            if(pool.Count == 0)
+            {
+                AddToPool();
+            }
+
+            var obj = GetPooledObject(false, false);
+            obj.transform.position = position;
+            obj.transform.rotation = rotation;
+            if(setActive)
+            {
+                obj.gameObject.SetActive(true);
+            }
+
+            obj.Initialize();
+            return obj;
+        }
+
+        public T GetPooledObject(Vector3 position, Quaternion rotation, Transform parent, bool setActive = true)
+        {
+            if(pool.Count == 0)
+            {
+                AddToPool();
+            }
+
+            var obj = GetPooledObject(false, false);
+            obj.transform.SetParent(parent);
+            obj.transform.position = position;
+            obj.transform.rotation = rotation;
+            if(setActive)
+            {
+                obj.gameObject.SetActive(true);
+            }
+
+            obj.Initialize();
+            return obj;
+        }
+
+        #endregion
 
         private void AddToPool(int count = 1)
         {
