@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 namespace AngryKoala.ObjectPool
 {
@@ -145,13 +146,50 @@ namespace AngryKoala.ObjectPool
 
         public void ReturnToPool(T obj)
         {
-            if(obj.gameObject.activeInHierarchy)
+            if(obj != null)
             {
-                obj.Terminate();
-                obj.gameObject.SetActive(false);
-                obj.transform.SetParent(transform);
+                DOTween.Kill(obj.gameObject.GetInstanceID());
 
-                pool.Enqueue(obj);
+                if(obj.gameObject.activeInHierarchy)
+                {
+                    obj.Terminate();
+                    obj.gameObject.SetActive(false);
+                    obj.transform.SetParent(transform);
+
+                    pool.Enqueue(obj);
+                }
+            }
+            else
+            {
+                Debug.LogError("Do not destroy pooled objects, use ReturnToPool instead");
+            }
+        }
+
+        public void ReturnToPool(T obj, float delay)
+        {
+            if(obj != null)
+            {
+                DOTween.Kill(obj.gameObject.GetInstanceID());
+
+                Sequence returnSequence = DOTween.Sequence();
+                returnSequence.SetId(obj.gameObject.GetInstanceID());
+
+                returnSequence.AppendInterval(delay);
+                returnSequence.AppendCallback(() =>
+                {
+                    if(obj.gameObject.activeInHierarchy)
+                    {
+                        obj.Terminate();
+                        obj.gameObject.SetActive(false);
+                        obj.transform.SetParent(transform);
+
+                        pool.Enqueue(obj);
+                    }
+                });
+            }
+            else
+            {
+                Debug.LogError("Do not destroy pooled objects, use ReturnToPool instead");
             }
         }
 
