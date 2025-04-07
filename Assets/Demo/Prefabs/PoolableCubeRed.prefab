@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 5381904522940641262}
   - component: {fileID: 6841585978624268542}
   m_Layer: 0
-  m_Name: PoolableCube
+  m_Name: PoolableCubeRed
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

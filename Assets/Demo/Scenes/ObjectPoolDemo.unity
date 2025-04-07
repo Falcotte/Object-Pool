@@ -457,8 +457,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 276452a03add1ce478975771d4f1faaf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _pooledObject: {fileID: 6841585978624268542, guid: 907a0e52d86cf134b91edf6c3be30975, type: 3}
-  _initialSize: 20
+  _poolData:
+    m_keys: 0000000001000000
+    m_values:
+    - _poolable: {fileID: 6841585978624268542, guid: 907a0e52d86cf134b91edf6c3be30975, type: 3}
+      _initialSize: 20
+      _maxSize: 100
+    - _poolable: {fileID: 6841585978624268542, guid: b5f2b5bf0e90e6f46881c0f828d16191, type: 3}
+      _initialSize: 20
+      _maxSize: 100
 --- !u!1 &1965326263
 GameObject:
   m_ObjectHideFlags: 0

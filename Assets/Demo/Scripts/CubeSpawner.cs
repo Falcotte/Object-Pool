@@ -5,7 +5,8 @@ using AngryKoala.Services;
 public class CubeSpawner : MonoBehaviour
 {
     [SerializeField] private float _spawnDelay;
-    
+
+    private int _cubeCounter;
     private float _spawnTimer;
 
     private IPoolService _poolService;
@@ -19,7 +20,20 @@ public class CubeSpawner : MonoBehaviour
     {
         if(_spawnTimer >= _spawnDelay)
         {
-            _poolService.CubePool.Get(Vector3.up * 4f, Quaternion.identity);
+            if(_cubeCounter%2 == 0)
+            {
+                PoolableCube poolableCube = _poolService.CubePool.Get(PoolKey.RedPoolableCube);
+                poolableCube.transform.position = Vector3.up * 4f;
+                poolableCube.transform.rotation = Quaternion.identity;
+            }
+            else
+            {
+                PoolableCube poolableCube = _poolService.CubePool.Get(PoolKey.BluePoolableCube);
+                poolableCube.transform.position = Vector3.up * 4f;
+                poolableCube.transform.rotation = Quaternion.identity;
+            }
+            
+            _cubeCounter++;
             _spawnTimer = 0f;
         }
         else
