@@ -5,7 +5,7 @@ using DG.Tweening;
 namespace AngryKoala.Pooling
 {
     /// <summary>
-    /// All object pools must inherit from this class, all pooled objects must implement the IPoolable interface
+    /// All object pools must inherit from this class, all pooled objects must implement the IPoolable interface.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public abstract class ObjectPool<T> : MonoBehaviour where T : Component, IPoolable
@@ -29,7 +29,7 @@ namespace AngryKoala.Pooling
 
                 for (int i = 0; i < _poolData[poolKey].InitialSize; i++)
                 {
-                    Add(poolKey, _poolData[poolKey].Poolable, _pools[poolKey], _allPooledObjects[poolKey]);
+                    Add(poolKey, _poolData[poolKey].Poolable);
                 }
 
                 Debug.Log(
@@ -37,15 +37,15 @@ namespace AngryKoala.Pooling
             }
         }
 
-        private void Add(PoolKey poolKey, T poolable, Queue<T> pool, List<T> pooledObjects)
+        private void Add(PoolKey poolKey, T poolable)
         {
             var pooledObject = Instantiate(poolable, transform);
             pooledObject.gameObject.SetActive(false);
 
             pooledObject.PoolKey = poolKey;
 
-            pool.Enqueue(pooledObject);
-            pooledObjects.Add(pooledObject);
+            _pools[poolKey].Enqueue(pooledObject);
+            _allPooledObjects[poolKey].Add(pooledObject);
         }
 
         #region Get
@@ -59,58 +59,28 @@ namespace AngryKoala.Pooling
         /// <returns></returns>
         public T Get(PoolKey poolKey, bool setActive = true, bool initialize = true)
         {
-            if (_pools.TryGetValue(poolKey, out var queue))
+            if (!_pools.TryGetValue(poolKey, out var queue) || queue.Count == 0)
             {
-                if (queue.Count == 0)
+                if (_allPooledObjects[poolKey].Count < _poolData[poolKey].MaxSize)
                 {
-                    if (_allPooledObjects.TryGetValue(poolKey, out var pooledObjects))
-                    {
-                        if (pooledObjects.Count < _poolData[poolKey].MaxSize)
-                        {
-                            Add(poolKey, _poolData[poolKey].Poolable, _pools[poolKey], _allPooledObjects[poolKey]);
-
-                            var pooledObject = queue.Dequeue();
-
-                            if (setActive)
-                            {
-                                pooledObject.gameObject.SetActive(true);
-                            }
-
-                            if (initialize)
-                            {
-                                pooledObject.Initialize();
-                            }
-
-                            return pooledObject;
-                        }
-
-                        Debug.LogWarning(
-                            $"Pool for {_poolData[poolKey].Poolable.name} is full in {GetType().Name}");
-
-                        return null;
-                    }
+                    Add(poolKey, _poolData[poolKey].Poolable);
                 }
                 else
                 {
-                    var pooledObject = queue.Dequeue();
-
-                    if (setActive)
-                    {
-                        pooledObject.gameObject.SetActive(true);
-                    }
-
-                    if (initialize)
-                    {
-                        pooledObject.Initialize();
-                    }
-
-                    return pooledObject;
+                    Debug.LogWarning($"Pool for {_poolData[poolKey].Poolable.name} is full in {GetType().Name}");
+                    return null;
                 }
             }
 
-            Debug.LogWarning($"Pool with key {poolKey} not found in {GetType().Name}");
-
-            return null;
+            var pooledObject = queue.Dequeue();
+            
+            pooledObject.gameObject.SetActive(setActive);
+            if (initialize)
+            {
+                pooledObject.Initialize();
+            }
+            
+            return pooledObject;
         }
 
         /// <summary>
@@ -119,63 +89,28 @@ namespace AngryKoala.Pooling
         /// <param name="poolKey"></param>
         /// <param name="parent"></param>
         /// <param name="setActive"></param>
+        /// <param name="initialize"></param>
         /// <returns></returns>
-        public T Get(PoolKey poolKey, Transform parent, bool setActive = true)
+        public T Get(PoolKey poolKey, Transform parent, bool setActive = true, bool initialize = true)
         {
-            if (_pools.TryGetValue(poolKey, out var queue))
+            var pooledObject = Get(poolKey, false, false);
+
+            if (pooledObject == null)
             {
-                if (queue.Count == 0)
-                {
-                    if (_allPooledObjects.TryGetValue(poolKey, out var pooledObjects))
-                    {
-                        if (pooledObjects.Count < _poolData[poolKey].MaxSize)
-                        {
-                            Add(poolKey, _poolData[poolKey].Poolable, _pools[poolKey], _allPooledObjects[poolKey]);
-
-                            var pooledObject = queue.Dequeue();
-
-                            pooledObject.transform.SetParent(parent);
-                            pooledObject.transform.position = parent.position;
-                            pooledObject.transform.rotation = parent.rotation;
-
-                            if (setActive)
-                            {
-                                pooledObject.gameObject.SetActive(true);
-                            }
-
-                            pooledObject.Initialize();
-
-                            return pooledObject;
-                        }
-
-                        Debug.LogWarning(
-                            $"Pool for {_poolData[poolKey].Poolable.name} is full in {GetType().Name}");
-
-                        return null;
-                    }
-                }
-                else
-                {
-                    var pooledObject = queue.Dequeue();
-
-                    pooledObject.transform.SetParent(parent);
-                    pooledObject.transform.position = parent.position;
-                    pooledObject.transform.rotation = parent.rotation;
-
-                    if (setActive)
-                    {
-                        pooledObject.gameObject.SetActive(true);
-                    }
-
-                    pooledObject.Initialize();
-
-                    return pooledObject;
-                }
+                return null;
             }
 
-            Debug.LogWarning($"Pool with key {poolKey} not found in {GetType().Name}");
-
-            return null;
+            pooledObject.transform.SetParent(parent);
+            pooledObject.transform.position = parent.position;
+            pooledObject.transform.rotation = parent.rotation;
+            
+            pooledObject.gameObject.SetActive(setActive);
+            if (initialize)
+            {
+                pooledObject.Initialize();
+            }
+            
+            return pooledObject;
         }
 
         /// <summary>
@@ -190,64 +125,23 @@ namespace AngryKoala.Pooling
         public T Get(PoolKey poolKey, Vector3 position, Quaternion rotation, bool setActive = true,
             bool initialize = true)
         {
-            if (_pools.TryGetValue(poolKey, out var queue))
+            var pooledObject = Get(poolKey, false, false);
+            
+            if (pooledObject == null)
             {
-                if (queue.Count == 0)
-                {
-                    if (_allPooledObjects.TryGetValue(poolKey, out var pooledObjects))
-                    {
-                        if (pooledObjects.Count < _poolData[poolKey].MaxSize)
-                        {
-                            Add(poolKey, _poolData[poolKey].Poolable, _pools[poolKey], _allPooledObjects[poolKey]);
-
-                            var pooledObject = queue.Dequeue();
-
-                            pooledObject.transform.position = position;
-                            pooledObject.transform.rotation = rotation;
-                            
-                            if (setActive)
-                            {
-                                pooledObject.gameObject.SetActive(true);
-                            }
-
-                            if (initialize)
-                            {
-                                pooledObject.Initialize();
-                            }
-
-                            return pooledObject;
-                        }
-
-                        Debug.LogWarning(
-                            $"Pool for {_poolData[poolKey].Poolable.name} is full in {GetType().Name}");
-
-                        return null;
-                    }
-                }
-                else
-                {
-                    var pooledObject = queue.Dequeue();
-
-                    pooledObject.transform.position = position;
-                    pooledObject.transform.rotation = rotation;
-                    
-                    if (setActive)
-                    {
-                        pooledObject.gameObject.SetActive(true);
-                    }
-
-                    if (initialize)
-                    {
-                        pooledObject.Initialize();
-                    }
-
-                    return pooledObject;
-                }
+                return null;
             }
 
-            Debug.LogWarning($"Pool with key {poolKey} not found in {GetType().Name}");
-
-            return null;
+            pooledObject.transform.position = position;
+            pooledObject.transform.rotation = rotation;
+           
+            pooledObject.gameObject.SetActive(setActive);
+            if (initialize)
+            {
+                pooledObject.Initialize();
+            }
+            
+            return pooledObject;
         }
         
         /// <summary>
@@ -258,118 +152,78 @@ namespace AngryKoala.Pooling
         /// <param name="localRotation"></param>
         /// <param name="parent"></param>
         /// <param name="setActive"></param>
+        /// <param name="initialize"></param>
         /// <returns></returns>
-        public T Get(PoolKey poolKey, Vector3 localPosition, Quaternion localRotation, Transform parent, bool setActive = true)
+        public T Get(PoolKey poolKey, Vector3 localPosition, Quaternion localRotation, Transform parent, bool setActive = true, bool initialize = true)
         {
-            if (_pools.TryGetValue(poolKey, out var queue))
+            var pooledObject = Get(poolKey, false, false);
+
+            if (pooledObject == null)
             {
-                if (queue.Count == 0)
-                {
-                    if (_allPooledObjects.TryGetValue(poolKey, out var pooledObjects))
-                    {
-                        if (pooledObjects.Count < _poolData[poolKey].MaxSize)
-                        {
-                            Add(poolKey, _poolData[poolKey].Poolable, _pools[poolKey], _allPooledObjects[poolKey]);
-
-                            var pooledObject = queue.Dequeue();
-
-                            pooledObject.transform.SetParent(parent);
-                            pooledObject.transform.localPosition = localPosition;
-                            pooledObject.transform.localRotation = localRotation;
-
-                            if (setActive)
-                            {
-                                pooledObject.gameObject.SetActive(true);
-                            }
-
-                            pooledObject.Initialize();
-
-                            return pooledObject;
-                        }
-
-                        Debug.LogWarning(
-                            $"Pool for {_poolData[poolKey].Poolable.name} is full in {GetType().Name}");
-
-                        return null;
-                    }
-                }
-                else
-                {
-                    var pooledObject = queue.Dequeue();
-
-                    pooledObject.transform.SetParent(parent);
-                    pooledObject.transform.localPosition = localPosition;
-                    pooledObject.transform.localRotation = localRotation;
-
-                    if (setActive)
-                    {
-                        pooledObject.gameObject.SetActive(true);
-                    }
-
-                    pooledObject.Initialize();
-
-                    return pooledObject;
-                }
+                return null;
             }
 
-            Debug.LogWarning($"Pool with key {poolKey} not found in {GetType().Name}");
-
-            return null;
+            pooledObject.transform.SetParent(parent);
+            pooledObject.transform.localPosition = localPosition;
+            pooledObject.transform.localRotation = localRotation;
+            
+            pooledObject.gameObject.SetActive(setActive);
+            if (initialize)
+            {
+                pooledObject.Initialize();
+            }
+            
+            return pooledObject;
         }
 
         #endregion
 
         public void Return(T pooledObject)
         {
-            if (pooledObject != null)
-            {
-                DOTween.Kill(pooledObject.gameObject.GetInstanceID());
-
-                if (!pooledObject.gameObject.activeInHierarchy)
-                {
-                    return;
-                }
-
-                pooledObject.Terminate();
-                pooledObject.gameObject.SetActive(false);
-                pooledObject.transform.SetParent(transform);
-
-                _pools[pooledObject.PoolKey].Enqueue(pooledObject);
-            }
-            else
+            if (pooledObject == null)
             {
                 Debug.LogError("Do not destroy pooled objects, use Return instead");
+                return;
             }
+
+            DOTween.Kill(pooledObject.gameObject.GetInstanceID());
+
+            if (!pooledObject.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            pooledObject.Terminate();
+            
+            pooledObject.gameObject.SetActive(false);
+            pooledObject.transform.SetParent(transform);
+            
+            _pools[pooledObject.PoolKey].Enqueue(pooledObject);
         }
 
         public void Return(T pooledObject, float delay)
         {
-            if (pooledObject != null)
-            {
-                DOTween.Kill(pooledObject.gameObject.GetInstanceID());
-
-                Sequence returnSequence = DOTween.Sequence();
-                returnSequence.SetId(pooledObject.gameObject.GetInstanceID());
-
-                returnSequence.AppendInterval(delay);
-                returnSequence.AppendCallback(() =>
-                {
-                    if (!pooledObject.gameObject.activeInHierarchy)
-                    {
-                        return;
-                    }
-
-                    pooledObject.Terminate();
-                    pooledObject.gameObject.SetActive(false);
-                    pooledObject.transform.SetParent(transform);
-
-                    _pools[pooledObject.PoolKey].Enqueue(pooledObject);
-                });
-            }
-            else
+            if (pooledObject == null)
             {
                 Debug.LogError("Do not destroy pooled objects, use Return instead");
+                return;
             }
+
+            DOTween.Kill(pooledObject.gameObject.GetInstanceID());
+            DOTween.Sequence()
+                .SetId(pooledObject.gameObject.GetInstanceID())
+                .AppendInterval(delay)
+                .AppendCallback(() =>
+                {
+                    if (!pooledObject.gameObject.activeInHierarchy) return;
+
+                    pooledObject.Terminate();
+                    
+                    pooledObject.gameObject.SetActive(false);
+                    pooledObject.transform.SetParent(transform);
+                    
+                    _pools[pooledObject.PoolKey].Enqueue(pooledObject);
+                });
         }
 
         public void ReturnAll()
