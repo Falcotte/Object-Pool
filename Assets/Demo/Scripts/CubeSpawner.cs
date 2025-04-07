@@ -1,23 +1,30 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using AngryKoala.ObjectPool;
+using AngryKoala.Pooling;
+using AngryKoala.Services;
 
 public class CubeSpawner : MonoBehaviour
 {
-    [SerializeField] private float spawnDelay;
-    private float spawnTimer;
+    [SerializeField] private float _spawnDelay;
+    
+    private float _spawnTimer;
+
+    private IPoolService _poolService;
+    
+    private void Start()
+    {
+        _poolService = ServiceLocator.Get<IPoolService>();
+    }
 
     private void Update()
     {
-        if(spawnTimer >= spawnDelay)
+        if(_spawnTimer >= _spawnDelay)
         {
-            CubePool.Instance.GetPooledObject(Vector3.up * 4f, Quaternion.identity);
-            spawnTimer = 0f;
+            _poolService.CubePool.Get(Vector3.up * 4f, Quaternion.identity);
+            _spawnTimer = 0f;
         }
         else
         {
-            spawnTimer += Time.deltaTime;
+            _spawnTimer += Time.deltaTime;
         }
     }
 }

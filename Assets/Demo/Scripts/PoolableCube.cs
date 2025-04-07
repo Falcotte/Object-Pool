@@ -1,11 +1,17 @@
 using UnityEngine;
 using AngryKoala.ObjectPool;
+using AngryKoala.Pooling;
+using AngryKoala.Services;
 
 public class PoolableCube : MonoBehaviour, IPoolable
 {
+    private IPoolService _poolService;
+    
     public void Initialize()
     {
-        CubePool.Instance.ReturnToPool(this, 2f);
+        _poolService = ServiceLocator.Get<IPoolService>();
+        
+        _poolService.CubePool.Return(this, 10f);
     }
 
     public void Terminate()

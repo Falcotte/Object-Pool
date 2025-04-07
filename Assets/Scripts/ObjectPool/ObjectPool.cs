@@ -8,196 +8,216 @@ namespace AngryKoala.ObjectPool
     /// All object pools must inherit from this class, all pooled objects must implement the IPoolable interface
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class ObjectPool<T> : MonoSingleton<ObjectPool<T>> where T : Component, IPoolable
+    public abstract class ObjectPool<T> : MonoBehaviour where T : Component, IPoolable
     {
-#pragma warning disable 0649
-        [SerializeField] private T obj;
-#pragma warning restore 0649
+        [SerializeField] private T _pooledObject;
 
-        [SerializeField] private int initialSize = 0;
+        [SerializeField] private int _initialSize = 0;
 
-        [SerializeField] private Queue<T> pool = new Queue<T>();
-        private List<T> allPooledObjects = new List<T>();
+        private readonly Queue<T> _pool = new();
+        private readonly List<T> _allPooledObjects = new();
 
         protected virtual void Start()
         {
-            AddToPool(initialSize);
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            Add(_initialSize);
+
+            Debug.Log($"{GetType().Name} initialized with {_initialSize} {_pooledObject.name}");
         }
 
         // Various overloads of GetPooledObject() method
+
         #region Get
 
-        public T GetPooledObject(bool setActive = true, bool initialize = true)
+        public T Get(bool setActive = true, bool initialize = true)
         {
-            if(pool.Count == 0)
+            if (_pool.Count == 0)
             {
-                AddToPool();
+                Add();
             }
 
-            var obj = pool.Dequeue();
-            if(setActive)
+            var pooledObject = _pool.Dequeue();
+            
+            if (setActive)
             {
-                obj.gameObject.SetActive(true);
+                pooledObject.gameObject.SetActive(true);
             }
 
-            if(initialize)
+            if (initialize)
             {
-                obj.Initialize();
+                pooledObject.Initialize();
             }
-            return obj;
+
+            return pooledObject;
         }
 
-        public T GetPooledObject(Transform parent, bool setActive = true)
+        public T Get(Transform parent, bool setActive = true)
         {
-            if(pool.Count == 0)
+            if (_pool.Count == 0)
             {
-                AddToPool();
+                Add();
             }
 
-            var obj = GetPooledObject(false, false);
-            obj.transform.SetParent(parent);
-            obj.transform.position = parent.position;
-            obj.transform.rotation = parent.rotation;
-            if(setActive)
+            var pooledObject = Get(false, false);
+            
+            pooledObject.transform.SetParent(parent);
+            pooledObject.transform.position = parent.position;
+            pooledObject.transform.rotation = parent.rotation;
+            
+            if (setActive)
             {
-                obj.gameObject.SetActive(true);
+                pooledObject.gameObject.SetActive(true);
             }
 
-            obj.Initialize();
-            return obj;
+            pooledObject.Initialize();
+            return pooledObject;
         }
 
-        public T GetPooledObject(Transform parent, bool instantiateInWorldSpace, bool setActive = true)
+        public T Get(Transform parent, bool instantiateInWorldSpace, bool setActive = true)
         {
-            if(pool.Count == 0)
+            if (_pool.Count == 0)
             {
-                AddToPool();
+                Add();
             }
 
-            var obj = GetPooledObject(false, false);
-            obj.transform.SetParent(parent);
-            if(!instantiateInWorldSpace)
+            var pooledObject = Get(false, false);
+            
+            pooledObject.transform.SetParent(parent);
+            
+            if (!instantiateInWorldSpace)
             {
-                obj.transform.position = parent.position;
-                obj.transform.rotation = parent.rotation;
+                pooledObject.transform.position = parent.position;
+                pooledObject.transform.rotation = parent.rotation;
             }
 
-            if(setActive)
+            if (setActive)
             {
-                obj.gameObject.SetActive(true);
+                pooledObject.gameObject.SetActive(true);
             }
 
-            obj.Initialize();
-            return obj;
+            pooledObject.Initialize();
+            return pooledObject;
         }
 
-        public T GetPooledObject(Vector3 position, Quaternion rotation, bool setActive = true)
+        public T Get(Vector3 position, Quaternion rotation, bool setActive = true)
         {
-            if(pool.Count == 0)
+            if (_pool.Count == 0)
             {
-                AddToPool();
+                Add();
             }
 
-            var obj = GetPooledObject(false, false);
-            obj.transform.position = position;
-            obj.transform.rotation = rotation;
-            if(setActive)
+            var pooledObject = Get(false, false);
+            
+            pooledObject.transform.position = position;
+            pooledObject.transform.rotation = rotation;
+            
+            if (setActive)
             {
-                obj.gameObject.SetActive(true);
+                pooledObject.gameObject.SetActive(true);
             }
 
-            obj.Initialize();
-            return obj;
+            pooledObject.Initialize();
+            return pooledObject;
         }
 
-        public T GetPooledObject(Vector3 position, Quaternion rotation, Transform parent, bool setActive = true)
+        public T Get(Vector3 position, Quaternion rotation, Transform parent, bool setActive = true)
         {
-            if(pool.Count == 0)
+            if (_pool.Count == 0)
             {
-                AddToPool();
+                Add();
             }
 
-            var obj = GetPooledObject(false, false);
-            obj.transform.SetParent(parent);
-            obj.transform.position = position;
-            obj.transform.rotation = rotation;
-            if(setActive)
+            var pooledObject = Get(false, false);
+            
+            pooledObject.transform.SetParent(parent);
+            pooledObject.transform.position = position;
+            pooledObject.transform.rotation = rotation;
+            
+            if (setActive)
             {
-                obj.gameObject.SetActive(true);
+                pooledObject.gameObject.SetActive(true);
             }
 
-            obj.Initialize();
-            return obj;
+            pooledObject.Initialize();
+            return pooledObject;
         }
 
         #endregion
 
-        private void AddToPool(int count = 1)
+        private void Add(int count = 1)
         {
-            for(int i = 0; i < count; i++)
+            for (int i = 0; i < count; i++)
             {
-                var newObj = Instantiate(obj, transform);
-                newObj.gameObject.SetActive(false);
+                var newPooledObject = Instantiate(_pooledObject, transform);
+                newPooledObject.gameObject.SetActive(false);
 
-                pool.Enqueue(newObj);
-                allPooledObjects.Add(newObj);
+                _pool.Enqueue(newPooledObject);
+                _allPooledObjects.Add(newPooledObject);
             }
         }
 
-        public void ReturnToPool(T obj)
+        public void Return(T pooledObject)
         {
-            if(obj != null)
+            if (pooledObject != null)
             {
-                DOTween.Kill(obj.gameObject.GetInstanceID());
+                DOTween.Kill(pooledObject.gameObject.GetInstanceID());
 
-                if(obj.gameObject.activeInHierarchy)
+                if (!pooledObject.gameObject.activeInHierarchy)
                 {
-                    obj.Terminate();
-                    obj.gameObject.SetActive(false);
-                    obj.transform.SetParent(transform);
-
-                    pool.Enqueue(obj);
+                    return;
                 }
+                
+                pooledObject.Terminate();
+                pooledObject.gameObject.SetActive(false);
+                pooledObject.transform.SetParent(transform);
+
+                _pool.Enqueue(pooledObject);
             }
             else
             {
-                Debug.LogError("Do not destroy pooled objects, use ReturnToPool instead");
+                Debug.LogError("Do not destroy pooled objects, use Return instead");
             }
         }
 
-        public void ReturnToPool(T obj, float delay)
+        public void Return(T pooledObject, float delay)
         {
-            if(obj != null)
+            if (pooledObject != null)
             {
-                DOTween.Kill(obj.gameObject.GetInstanceID());
+                DOTween.Kill(pooledObject.gameObject.GetInstanceID());
 
                 Sequence returnSequence = DOTween.Sequence();
-                returnSequence.SetId(obj.gameObject.GetInstanceID());
+                returnSequence.SetId(pooledObject.gameObject.GetInstanceID());
 
                 returnSequence.AppendInterval(delay);
                 returnSequence.AppendCallback(() =>
                 {
-                    if(obj.gameObject.activeInHierarchy)
+                    if (!pooledObject.gameObject.activeInHierarchy)
                     {
-                        obj.Terminate();
-                        obj.gameObject.SetActive(false);
-                        obj.transform.SetParent(transform);
-
-                        pool.Enqueue(obj);
+                        return;
                     }
+                    
+                    pooledObject.Terminate();
+                    pooledObject.gameObject.SetActive(false);
+                    pooledObject.transform.SetParent(transform);
+
+                    _pool.Enqueue(pooledObject);
                 });
             }
             else
             {
-                Debug.LogError("Do not destroy pooled objects, use ReturnToPool instead");
+                Debug.LogError("Do not destroy pooled objects, use Return instead");
             }
         }
 
-        public void ReturnAllToPool()
+        public void ReturnAll()
         {
-            foreach(T obj in allPooledObjects)
+            foreach (T pooledObject in _allPooledObjects)
             {
-                ReturnToPool(obj);
+                Return(pooledObject);
             }
         }
     }
