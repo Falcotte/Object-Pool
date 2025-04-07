@@ -28,9 +28,7 @@ public class CubeSpawner : MonoBehaviour
             }
             else
             {
-                PoolableCube poolableCube = _poolService.CubePool.Get(PoolKey.BluePoolableCube);
-                poolableCube.transform.position = Vector3.up * 4f;
-                poolableCube.transform.rotation = Quaternion.identity;
+                _poolService.CubePool.Get(PoolKey.BluePoolableCube, Vector3.up * 4f, Quaternion.identity);
             }
             
             _cubeCounter++;

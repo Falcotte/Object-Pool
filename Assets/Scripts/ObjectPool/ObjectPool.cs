@@ -43,13 +43,20 @@ namespace AngryKoala.Pooling
             pooledObject.gameObject.SetActive(false);
 
             pooledObject.PoolKey = poolKey;
-            
+
             pool.Enqueue(pooledObject);
             pooledObjects.Add(pooledObject);
         }
 
         #region Get
 
+        /// <summary>
+        /// Retrieves an object from the pool.
+        /// </summary>
+        /// <param name="poolKey"></param>
+        /// <param name="setActive"></param>
+        /// <param name="initialize"></param>
+        /// <returns></returns>
         public T Get(PoolKey poolKey, bool setActive = true, bool initialize = true)
         {
             if (_pools.TryGetValue(poolKey, out var queue))
@@ -106,6 +113,13 @@ namespace AngryKoala.Pooling
             return null;
         }
 
+        /// <summary>
+        /// Retrieves an object from the pool, setting its parent.
+        /// </summary>
+        /// <param name="poolKey"></param>
+        /// <param name="parent"></param>
+        /// <param name="setActive"></param>
+        /// <returns></returns>
         public T Get(PoolKey poolKey, Transform parent, bool setActive = true)
         {
             if (_pools.TryGetValue(poolKey, out var queue))
@@ -147,6 +161,145 @@ namespace AngryKoala.Pooling
                     pooledObject.transform.SetParent(parent);
                     pooledObject.transform.position = parent.position;
                     pooledObject.transform.rotation = parent.rotation;
+
+                    if (setActive)
+                    {
+                        pooledObject.gameObject.SetActive(true);
+                    }
+
+                    pooledObject.Initialize();
+
+                    return pooledObject;
+                }
+            }
+
+            Debug.LogWarning($"Pool with key {poolKey} not found in {GetType().Name}");
+
+            return null;
+        }
+
+        /// <summary>
+        /// Retrieves an object from the pool, setting its position and rotation.
+        /// </summary>
+        /// <param name="poolKey"></param>
+        /// <param name="position"></param>
+        /// <param name="rotation"></param>
+        /// <param name="setActive"></param>
+        /// <param name="initialize"></param>
+        /// <returns></returns>
+        public T Get(PoolKey poolKey, Vector3 position, Quaternion rotation, bool setActive = true,
+            bool initialize = true)
+        {
+            if (_pools.TryGetValue(poolKey, out var queue))
+            {
+                if (queue.Count == 0)
+                {
+                    if (_allPooledObjects.TryGetValue(poolKey, out var pooledObjects))
+                    {
+                        if (pooledObjects.Count < _poolData[poolKey].MaxSize)
+                        {
+                            Add(poolKey, _poolData[poolKey].Poolable, _pools[poolKey], _allPooledObjects[poolKey]);
+
+                            var pooledObject = queue.Dequeue();
+
+                            pooledObject.transform.position = position;
+                            pooledObject.transform.rotation = rotation;
+                            
+                            if (setActive)
+                            {
+                                pooledObject.gameObject.SetActive(true);
+                            }
+
+                            if (initialize)
+                            {
+                                pooledObject.Initialize();
+                            }
+
+                            return pooledObject;
+                        }
+
+                        Debug.LogWarning(
+                            $"Pool for {_poolData[poolKey].Poolable.name} is full in {GetType().Name}");
+
+                        return null;
+                    }
+                }
+                else
+                {
+                    var pooledObject = queue.Dequeue();
+
+                    pooledObject.transform.position = position;
+                    pooledObject.transform.rotation = rotation;
+                    
+                    if (setActive)
+                    {
+                        pooledObject.gameObject.SetActive(true);
+                    }
+
+                    if (initialize)
+                    {
+                        pooledObject.Initialize();
+                    }
+
+                    return pooledObject;
+                }
+            }
+
+            Debug.LogWarning($"Pool with key {poolKey} not found in {GetType().Name}");
+
+            return null;
+        }
+        
+        /// <summary>
+        /// Retrieves an object from the pool, setting its local position, rotation, and parent.
+        /// </summary>
+        /// <param name="poolKey"></param>
+        /// <param name="localPosition"></param>
+        /// <param name="localRotation"></param>
+        /// <param name="parent"></param>
+        /// <param name="setActive"></param>
+        /// <returns></returns>
+        public T Get(PoolKey poolKey, Vector3 localPosition, Quaternion localRotation, Transform parent, bool setActive = true)
+        {
+            if (_pools.TryGetValue(poolKey, out var queue))
+            {
+                if (queue.Count == 0)
+                {
+                    if (_allPooledObjects.TryGetValue(poolKey, out var pooledObjects))
+                    {
+                        if (pooledObjects.Count < _poolData[poolKey].MaxSize)
+                        {
+                            Add(poolKey, _poolData[poolKey].Poolable, _pools[poolKey], _allPooledObjects[poolKey]);
+
+                            var pooledObject = queue.Dequeue();
+
+                            pooledObject.transform.SetParent(parent);
+                            pooledObject.transform.localPosition = localPosition;
+                            pooledObject.transform.localRotation = localRotation;
+
+                            if (setActive)
+                            {
+                                pooledObject.gameObject.SetActive(true);
+                            }
+
+                            pooledObject.Initialize();
+
+                            return pooledObject;
+                        }
+
+                        Debug.LogWarning(
+                            $"Pool for {_poolData[poolKey].Poolable.name} is full in {GetType().Name}");
+
+                        return null;
+                    }
+                }
+                else
+                {
+                    var pooledObject = queue.Dequeue();
+
+                    pooledObject.transform.SetParent(parent);
+                    pooledObject.transform.localPosition = localPosition;
+                    pooledObject.transform.localRotation = localRotation;
 
                     if (setActive)
                     {
