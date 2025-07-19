@@ -556,6 +556,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd800a88881a3d949ae9a04514c756d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _autoRegister: 1
   _cubePool: {fileID: 1086162555}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
