@@ -10,7 +10,7 @@ public class CubeSpawner : MonoBehaviour
     private float _spawnTimer;
 
     private IPoolService _poolService;
-    
+
     private void Start()
     {
         _poolService = ServiceLocator.Get<IPoolService>();
@@ -18,9 +18,9 @@ public class CubeSpawner : MonoBehaviour
 
     private void Update()
     {
-        if(_spawnTimer >= _spawnDelay)
+        if (_spawnTimer >= _spawnDelay)
         {
-            if(_cubeCounter%2 == 0)
+            if (_cubeCounter % 2 == 0)
             {
                 PoolableCube poolableCube = _poolService.CubePool.Get(PoolKey.RedPoolableCube);
                 poolableCube.transform.position = Vector3.up * 4f;
@@ -30,7 +30,7 @@ public class CubeSpawner : MonoBehaviour
             {
                 _poolService.CubePool.Get(PoolKey.BluePoolableCube, Vector3.up * 4f, Quaternion.identity);
             }
-            
+
             _cubeCounter++;
             _spawnTimer = 0f;
         }
