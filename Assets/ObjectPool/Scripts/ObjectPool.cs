@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using DG.Tweening;
 
@@ -51,7 +52,7 @@ namespace AngryKoala.Pooling
         #region Get
 
         /// <summary>
-        /// Retrieves an object from the pool.
+        /// Retrieves an object with the given key from the pool.
         /// </summary>
         /// <param name="poolKey"></param>
         /// <param name="setActive"></param>
@@ -73,18 +74,18 @@ namespace AngryKoala.Pooling
             }
 
             var pooledObject = queue.Dequeue();
-            
+
             pooledObject.gameObject.SetActive(setActive);
             if (initialize)
             {
                 pooledObject.Initialize();
             }
-            
+
             return pooledObject;
         }
 
         /// <summary>
-        /// Retrieves an object from the pool, setting its parent.
+        /// Retrieves an object with the given key from the pool, setting its parent.
         /// </summary>
         /// <param name="poolKey"></param>
         /// <param name="parent"></param>
@@ -103,18 +104,18 @@ namespace AngryKoala.Pooling
             pooledObject.transform.SetParent(parent);
             pooledObject.transform.position = parent.position;
             pooledObject.transform.rotation = parent.rotation;
-            
+
             pooledObject.gameObject.SetActive(setActive);
             if (initialize)
             {
                 pooledObject.Initialize();
             }
-            
+
             return pooledObject;
         }
 
         /// <summary>
-        /// Retrieves an object from the pool, setting its position and rotation.
+        /// Retrieves an object with the given key from the pool, setting its position and rotation.
         /// </summary>
         /// <param name="poolKey"></param>
         /// <param name="position"></param>
@@ -126,7 +127,7 @@ namespace AngryKoala.Pooling
             bool initialize = true)
         {
             var pooledObject = Get(poolKey, false, false);
-            
+
             if (pooledObject == null)
             {
                 return null;
@@ -134,18 +135,18 @@ namespace AngryKoala.Pooling
 
             pooledObject.transform.position = position;
             pooledObject.transform.rotation = rotation;
-           
+
             pooledObject.gameObject.SetActive(setActive);
             if (initialize)
             {
                 pooledObject.Initialize();
             }
-            
+
             return pooledObject;
         }
-        
+
         /// <summary>
-        /// Retrieves an object from the pool, setting its local position, rotation, and parent.
+        /// Retrieves an object with the given key from the pool, setting its local position, rotation, and parent.
         /// </summary>
         /// <param name="poolKey"></param>
         /// <param name="localPosition"></param>
@@ -154,7 +155,8 @@ namespace AngryKoala.Pooling
         /// <param name="setActive"></param>
         /// <param name="initialize"></param>
         /// <returns></returns>
-        public T Get(PoolKey poolKey, Vector3 localPosition, Quaternion localRotation, Transform parent, bool setActive = true, bool initialize = true)
+        public T Get(PoolKey poolKey, Vector3 localPosition, Quaternion localRotation, Transform parent,
+            bool setActive = true, bool initialize = true)
         {
             var pooledObject = Get(poolKey, false, false);
 
@@ -166,14 +168,78 @@ namespace AngryKoala.Pooling
             pooledObject.transform.SetParent(parent);
             pooledObject.transform.localPosition = localPosition;
             pooledObject.transform.localRotation = localRotation;
-            
+
             pooledObject.gameObject.SetActive(setActive);
             if (initialize)
             {
                 pooledObject.Initialize();
             }
-            
+
             return pooledObject;
+        }
+
+        /// <summary>
+        /// Retrieves a random object from the pool.
+        /// </summary>
+        /// <param name="setActive"></param>
+        /// <param name="initialize"></param>
+        /// <returns></returns>
+        public T GetRandom(bool setActive = true, bool initialize = true)
+        {
+            int randomIndex = Random.Range(0, _poolData.Count);
+            PoolKey poolKey = _poolData.Keys.ElementAt(randomIndex);
+
+            return Get(poolKey, setActive, initialize);
+        }
+
+        /// <summary>
+        /// Retrieves a random object from the pool, setting its parent.
+        /// </summary>
+        /// <param name="parent"></param>
+        /// <param name="setActive"></param>
+        /// <param name="initialize"></param>
+        /// <returns></returns>
+        public T GetRandom(Transform parent, bool setActive = true, bool initialize = true)
+        {
+            int randomIndex = Random.Range(0, _poolData.Count);
+            PoolKey poolKey = _poolData.Keys.ElementAt(randomIndex);
+
+            return Get(poolKey, parent, setActive, initialize);
+        }
+
+        /// <summary>
+        /// Retrieves a random object from the pool, setting its position and rotation.
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="rotation"></param>
+        /// <param name="setActive"></param>
+        /// <param name="initialize"></param>
+        /// <returns></returns>
+        public T GetRandom(Vector3 position, Quaternion rotation, bool setActive = true,
+            bool initialize = true)
+        {
+            int randomIndex = Random.Range(0, _poolData.Count);
+            PoolKey poolKey = _poolData.Keys.ElementAt(randomIndex);
+
+            return Get(poolKey, position, rotation, setActive, initialize);
+        }
+
+        /// <summary>
+        /// Retrieves a random object from the pool, setting its local position, rotation, and parent.
+        /// </summary>
+        /// <param name="localPosition"></param>
+        /// <param name="localRotation"></param>
+        /// <param name="parent"></param>
+        /// <param name="setActive"></param>
+        /// <param name="initialize"></param>
+        /// <returns></returns>
+        public T GetRandom(Vector3 localPosition, Quaternion localRotation, Transform parent,
+            bool setActive = true, bool initialize = true)
+        {
+            int randomIndex = Random.Range(0, _poolData.Count);
+            PoolKey poolKey = _poolData.Keys.ElementAt(randomIndex);
+
+            return Get(poolKey, localPosition, localRotation, parent, setActive, initialize);
         }
 
         #endregion
@@ -194,10 +260,10 @@ namespace AngryKoala.Pooling
             }
 
             pooledObject.Terminate();
-            
+
             pooledObject.gameObject.SetActive(false);
             pooledObject.transform.SetParent(transform);
-            
+
             _pools[pooledObject.PoolKey].Enqueue(pooledObject);
         }
 
@@ -218,10 +284,10 @@ namespace AngryKoala.Pooling
                     if (!pooledObject.gameObject.activeInHierarchy) return;
 
                     pooledObject.Terminate();
-                    
+
                     pooledObject.gameObject.SetActive(false);
                     pooledObject.transform.SetParent(transform);
-                    
+
                     _pools[pooledObject.PoolKey].Enqueue(pooledObject);
                 });
         }
