@@ -11,7 +11,7 @@ namespace AngryKoala.Pooling
     /// <typeparam name="T"></typeparam>
     public abstract class MonoPool<T> : MonoBehaviour where T : Component, IPoolable
     {
-        [SerializeField] private SerializableDictionary<PoolKey, PoolData<T>> _poolData;
+        [SerializeField] private SerializableDictionary<PoolKey, MonoPoolData<T>> _poolData;
 
         private readonly Dictionary<PoolKey, Queue<T>> _pools = new();
         private readonly Dictionary<PoolKey, List<T>> _allPooledMonoBehaviours = new();
