@@ -23,12 +23,12 @@ public class CubeSpawner : MonoBehaviour
             if (_cubeCounter % 2 == 0)
             {
                 PoolableCube poolableCube = _poolService.CubePool.Get(PoolKey.RedPoolableCube);
-                poolableCube.transform.position = Vector3.up * 4f;
+                poolableCube.transform.position = Vector3.up * 20f;
                 poolableCube.transform.rotation = Quaternion.identity;
             }
             else
             {
-                _poolService.CubePool.Get(PoolKey.BluePoolableCube, Vector3.up * 4f, Quaternion.identity);
+                _poolService.CubePool.Get(PoolKey.BluePoolableCube, Vector3.up * 20f, Quaternion.identity);
             }
 
             _cubeCounter++;
