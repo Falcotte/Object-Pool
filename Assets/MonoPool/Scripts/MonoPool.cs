@@ -6,15 +6,15 @@ using DG.Tweening;
 namespace AngryKoala.Pooling
 {
     /// <summary>
-    /// All object pools must inherit from this class, all pooled objects must implement the IPoolable interface.
+    /// All MonoBehaviour pools must inherit from this class, all pooled MonoBehaviours must implement the IPoolable interface.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class ObjectPool<T> : MonoBehaviour where T : Component, IPoolable
+    public abstract class MonoPool<T> : MonoBehaviour where T : Component, IPoolable
     {
         [SerializeField] private SerializableDictionary<PoolKey, PoolData<T>> _poolData;
 
         private readonly Dictionary<PoolKey, Queue<T>> _pools = new();
-        private readonly Dictionary<PoolKey, List<T>> _allPooledObjects = new();
+        private readonly Dictionary<PoolKey, List<T>> _allPooledMonoBehaviours = new();
 
         protected virtual void Start()
         {
@@ -26,7 +26,7 @@ namespace AngryKoala.Pooling
             foreach (var poolKey in _poolData.Keys)
             {
                 _pools[poolKey] = new Queue<T>();
-                _allPooledObjects[poolKey] = new List<T>();
+                _allPooledMonoBehaviours[poolKey] = new List<T>();
 
                 for (int i = 0; i < _poolData[poolKey].InitialSize; i++)
                 {
@@ -40,19 +40,19 @@ namespace AngryKoala.Pooling
 
         private void Add(PoolKey poolKey, T poolable)
         {
-            var pooledObject = Instantiate(poolable, transform);
-            pooledObject.gameObject.SetActive(false);
+            var pooledMonoBehaviour = Instantiate(poolable, transform);
+            pooledMonoBehaviour.gameObject.SetActive(false);
 
-            pooledObject.PoolKey = poolKey;
+            pooledMonoBehaviour.PoolKey = poolKey;
 
-            _pools[poolKey].Enqueue(pooledObject);
-            _allPooledObjects[poolKey].Add(pooledObject);
+            _pools[poolKey].Enqueue(pooledMonoBehaviour);
+            _allPooledMonoBehaviours[poolKey].Add(pooledMonoBehaviour);
         }
 
         #region Get
 
         /// <summary>
-        /// Retrieves an object with the given key from the pool.
+        /// Retrieves a MonoBehaviour with the given key from the pool.
         /// </summary>
         /// <param name="poolKey"></param>
         /// <param name="setActive"></param>
@@ -62,7 +62,7 @@ namespace AngryKoala.Pooling
         {
             if (!_pools.TryGetValue(poolKey, out var queue) || queue.Count == 0)
             {
-                if (_allPooledObjects[poolKey].Count < _poolData[poolKey].MaxSize)
+                if (_allPooledMonoBehaviours[poolKey].Count < _poolData[poolKey].MaxSize)
                 {
                     Add(poolKey, _poolData[poolKey].Poolable);
                 }
@@ -73,19 +73,19 @@ namespace AngryKoala.Pooling
                 }
             }
 
-            var pooledObject = queue.Dequeue();
+            var pooledMonoBehaviour = queue.Dequeue();
 
-            pooledObject.gameObject.SetActive(setActive);
+            pooledMonoBehaviour.gameObject.SetActive(setActive);
             if (initialize)
             {
-                pooledObject.Initialize();
+                pooledMonoBehaviour.Initialize();
             }
 
-            return pooledObject;
+            return pooledMonoBehaviour;
         }
 
         /// <summary>
-        /// Retrieves an object with the given key from the pool, setting its parent.
+        /// Retrieves a MonoBehaviour with the given key from the pool, setting its parent.
         /// </summary>
         /// <param name="poolKey"></param>
         /// <param name="parent"></param>
@@ -94,28 +94,28 @@ namespace AngryKoala.Pooling
         /// <returns></returns>
         public T Get(PoolKey poolKey, Transform parent, bool setActive = true, bool initialize = true)
         {
-            var pooledObject = Get(poolKey, false, false);
+            var pooledMonoBehaviour = Get(poolKey, false, false);
 
-            if (pooledObject == null)
+            if (pooledMonoBehaviour == null)
             {
                 return null;
             }
 
-            pooledObject.transform.SetParent(parent);
-            pooledObject.transform.position = parent.position;
-            pooledObject.transform.rotation = parent.rotation;
+            pooledMonoBehaviour.transform.SetParent(parent);
+            pooledMonoBehaviour.transform.position = parent.position;
+            pooledMonoBehaviour.transform.rotation = parent.rotation;
 
-            pooledObject.gameObject.SetActive(setActive);
+            pooledMonoBehaviour.gameObject.SetActive(setActive);
             if (initialize)
             {
-                pooledObject.Initialize();
+                pooledMonoBehaviour.Initialize();
             }
 
-            return pooledObject;
+            return pooledMonoBehaviour;
         }
 
         /// <summary>
-        /// Retrieves an object with the given key from the pool, setting its position and rotation.
+        /// Retrieves a MonoBehaviour with the given key from the pool, setting its position and rotation.
         /// </summary>
         /// <param name="poolKey"></param>
         /// <param name="position"></param>
@@ -126,27 +126,27 @@ namespace AngryKoala.Pooling
         public T Get(PoolKey poolKey, Vector3 position, Quaternion rotation, bool setActive = true,
             bool initialize = true)
         {
-            var pooledObject = Get(poolKey, false, false);
+            var pooledMonoBehaviour = Get(poolKey, false, false);
 
-            if (pooledObject == null)
+            if (pooledMonoBehaviour == null)
             {
                 return null;
             }
 
-            pooledObject.transform.position = position;
-            pooledObject.transform.rotation = rotation;
+            pooledMonoBehaviour.transform.position = position;
+            pooledMonoBehaviour.transform.rotation = rotation;
 
-            pooledObject.gameObject.SetActive(setActive);
+            pooledMonoBehaviour.gameObject.SetActive(setActive);
             if (initialize)
             {
-                pooledObject.Initialize();
+                pooledMonoBehaviour.Initialize();
             }
 
-            return pooledObject;
+            return pooledMonoBehaviour;
         }
 
         /// <summary>
-        /// Retrieves an object with the given key from the pool, setting its local position, rotation, and parent.
+        /// Retrieves a MonoBehaviour with the given key from the pool, setting its local position, rotation, and parent.
         /// </summary>
         /// <param name="poolKey"></param>
         /// <param name="localPosition"></param>
@@ -158,28 +158,28 @@ namespace AngryKoala.Pooling
         public T Get(PoolKey poolKey, Vector3 localPosition, Quaternion localRotation, Transform parent,
             bool setActive = true, bool initialize = true)
         {
-            var pooledObject = Get(poolKey, false, false);
+            var pooledMonoBehaviour = Get(poolKey, false, false);
 
-            if (pooledObject == null)
+            if (pooledMonoBehaviour == null)
             {
                 return null;
             }
 
-            pooledObject.transform.SetParent(parent);
-            pooledObject.transform.localPosition = localPosition;
-            pooledObject.transform.localRotation = localRotation;
+            pooledMonoBehaviour.transform.SetParent(parent);
+            pooledMonoBehaviour.transform.localPosition = localPosition;
+            pooledMonoBehaviour.transform.localRotation = localRotation;
 
-            pooledObject.gameObject.SetActive(setActive);
+            pooledMonoBehaviour.gameObject.SetActive(setActive);
             if (initialize)
             {
-                pooledObject.Initialize();
+                pooledMonoBehaviour.Initialize();
             }
 
-            return pooledObject;
+            return pooledMonoBehaviour;
         }
 
         /// <summary>
-        /// Retrieves a random object from the pool.
+        /// Retrieves a random MonoBehaviour from the pool.
         /// </summary>
         /// <param name="setActive"></param>
         /// <param name="initialize"></param>
@@ -193,7 +193,7 @@ namespace AngryKoala.Pooling
         }
 
         /// <summary>
-        /// Retrieves a random object from the pool, setting its parent.
+        /// Retrieves a random MonoBehaviour from the pool, setting its parent.
         /// </summary>
         /// <param name="parent"></param>
         /// <param name="setActive"></param>
@@ -208,7 +208,7 @@ namespace AngryKoala.Pooling
         }
 
         /// <summary>
-        /// Retrieves a random object from the pool, setting its position and rotation.
+        /// Retrieves a random MonoBehaviour from the pool, setting its position and rotation.
         /// </summary>
         /// <param name="position"></param>
         /// <param name="rotation"></param>
@@ -225,7 +225,7 @@ namespace AngryKoala.Pooling
         }
 
         /// <summary>
-        /// Retrieves a random object from the pool, setting its local position, rotation, and parent.
+        /// Retrieves a random MonoBehaviour from the pool, setting its local position, rotation, and parent.
         /// </summary>
         /// <param name="localPosition"></param>
         /// <param name="localRotation"></param>
@@ -244,70 +244,70 @@ namespace AngryKoala.Pooling
 
         #endregion
 
-        public void Return(T pooledObject)
+        public void Return(T pooledMonoBehaviour)
         {
-            if (pooledObject == null)
+            if (pooledMonoBehaviour == null)
             {
-                Debug.LogError("Do not destroy pooled objects, use Return instead");
+                Debug.LogError("Do not destroy pooled MonoBehaviours, use Return instead");
                 return;
             }
 
-            DOTween.Kill(pooledObject.gameObject.GetInstanceID());
+            DOTween.Kill(pooledMonoBehaviour.gameObject.GetInstanceID());
 
-            if (!pooledObject.gameObject.activeInHierarchy)
+            if (!pooledMonoBehaviour.gameObject.activeInHierarchy)
             {
                 return;
             }
 
-            pooledObject.Terminate();
+            pooledMonoBehaviour.Terminate();
 
-            pooledObject.gameObject.SetActive(false);
-            pooledObject.transform.SetParent(transform);
+            pooledMonoBehaviour.gameObject.SetActive(false);
+            pooledMonoBehaviour.transform.SetParent(transform);
 
-            _pools[pooledObject.PoolKey].Enqueue(pooledObject);
+            _pools[pooledMonoBehaviour.PoolKey].Enqueue(pooledMonoBehaviour);
         }
 
-        public void Return(T pooledObject, float delay)
+        public void Return(T pooledMonoBehaviour, float delay)
         {
-            if (pooledObject == null)
+            if (pooledMonoBehaviour == null)
             {
-                Debug.LogError("Do not destroy pooled objects, use Return instead");
+                Debug.LogError("Do not destroy pooled MonoBehaviours, use Return instead");
                 return;
             }
 
-            DOTween.Kill(pooledObject.gameObject.GetInstanceID());
+            DOTween.Kill(pooledMonoBehaviour.gameObject.GetInstanceID());
             DOTween.Sequence()
-                .SetId(pooledObject.gameObject.GetInstanceID())
+                .SetId(pooledMonoBehaviour.gameObject.GetInstanceID())
                 .AppendInterval(delay)
                 .AppendCallback(() =>
                 {
-                    if (!pooledObject.gameObject.activeInHierarchy) return;
+                    if (!pooledMonoBehaviour.gameObject.activeInHierarchy) return;
 
-                    pooledObject.Terminate();
+                    pooledMonoBehaviour.Terminate();
 
-                    pooledObject.gameObject.SetActive(false);
-                    pooledObject.transform.SetParent(transform);
+                    pooledMonoBehaviour.gameObject.SetActive(false);
+                    pooledMonoBehaviour.transform.SetParent(transform);
 
-                    _pools[pooledObject.PoolKey].Enqueue(pooledObject);
+                    _pools[pooledMonoBehaviour.PoolKey].Enqueue(pooledMonoBehaviour);
                 });
         }
 
         public void ReturnAll()
         {
-            foreach (List<T> pooledObjects in _allPooledObjects.Values)
+            foreach (List<T> pooledMonoBehaviours in _allPooledMonoBehaviours.Values)
             {
-                foreach (var pooledObject in pooledObjects)
+                foreach (var pooledMonoBehaviour in pooledMonoBehaviours)
                 {
-                    Return(pooledObject);
+                    Return(pooledMonoBehaviour);
                 }
             }
         }
 
         public void ReturnAll(PoolKey poolKey)
         {
-            foreach (T pooledObject in _allPooledObjects[poolKey])
+            foreach (T pooledMonoBehaviour in _allPooledMonoBehaviours[poolKey])
             {
-                Return(pooledObject);
+                Return(pooledMonoBehaviour);
             }
         }
     }

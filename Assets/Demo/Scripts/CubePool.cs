@@ -1,6 +1,6 @@
 using AngryKoala.Pooling;
 
-public class CubePool : ObjectPool<PoolableCube>
+public class CubePool : MonoPool<PoolableCube>
 {
 
 }
