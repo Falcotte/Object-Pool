@@ -3,7 +3,7 @@ using UnityEngine;
 namespace AngryKoala.Pooling
 {
     [System.Serializable]
-    public class PoolData<T> where T : Component, IPoolable
+    public class PoolData<T> where T : IPoolable, new()
     {
         [SerializeField] private T _poolable;
         public T Poolable => _poolable;

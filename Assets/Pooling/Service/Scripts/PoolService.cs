@@ -7,5 +7,8 @@ namespace AngryKoala.Pooling
     {
         [SerializeField] private CubePool _cubePool;
         public CubePool CubePool => _cubePool;
+        
+        [SerializeField] private ClassPool _classPool;
+        public ClassPool ClassPool => _classPool;
     }
 }

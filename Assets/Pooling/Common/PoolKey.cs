@@ -4,5 +4,7 @@ namespace AngryKoala.Pooling
     {
         RedPoolableCube = 0,
         BluePoolableCube = 1,
+        
+        PoolableClass = 2,
     }
 }
